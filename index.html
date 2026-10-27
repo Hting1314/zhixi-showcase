@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="知希：一个将触发词、任务规则、本地 Markdown 资料与 Python 脚本串联起来的个人 AI 助理系统。需求设计、结果核验与 AI 协作实践。">
+  <meta name="color-scheme" content="light">
+  <title>知希｜个人 AI 助理系统 · 作品展示</title>
+  <style>
+    :root { --paper:#f6f7f3; --white:#fff; --ink:#202f2b; --muted:#586862; --green:#225846; --green-dark:#173e32; --mint:#e9f0e8; --line:#d9e1d9; --soft:#eef1eb; --amber:#76561f; --amber-bg:#f4efdf; --radius:18px; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:24px; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif; font-size:16px; line-height:1.85; -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration:none; }
+    button { font:inherit; cursor:pointer; }
+    button, a { -webkit-tap-highlight-color:transparent; }
+    a:focus-visible, button:focus-visible, summary:focus-visible { outline:3px solid #b47729; outline-offset:5px; }
+    ::selection { background:#d7e8d1; color:var(--ink); }
+    h1,h2,h3,p { margin:0; }
+    h1,h2,h3 { line-height:1.4; }
+    code { padding:.08em .34em; border-radius:4px; background:var(--soft); font-family:Consolas,"SFMono-Regular",monospace; font-size:.9em; overflow-wrap:anywhere; }
+    .wrap { width:min(1120px,calc(100% - 80px)); margin-inline:auto; }
+    .skip { position:absolute; left:20px; top:-100px; padding:8px 16px; background:var(--white); z-index:5; }
+    .skip:focus { top:10px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:25px 0; border-bottom:1px solid var(--line); }
+    .brand { display:flex; align-items:center; gap:13px; flex-shrink:0; }
+    .brand-mark { display:grid; place-items:center; width:37px; height:37px; background:var(--green); color:#fff; border-radius:11px; font-size:20px; font-weight:700; }
+    .brand-name { font-size:20px; font-weight:700; letter-spacing:.12em; }
+    .brand-sub { border-left:1px solid var(--line); padding-left:14px; color:var(--muted); font-size:12px; letter-spacing:.08em; }
+    .nav { display:flex; gap:25px; color:var(--muted); font-size:14px; }
+    .nav a { padding:6px 0; }
+    .nav a:hover { color:var(--green); }
+    .hero { padding:74px 0 64px; display:grid; grid-template-columns:1.17fr 1fr; align-items:center; gap:65px; }
+    .eyebrow { display:flex; align-items:center; gap:9px; margin-bottom:22px; color:var(--green); font-size:12px; font-weight:700; letter-spacing:.1em; }
+    .dot { width:7px; height:7px; background:var(--green); border-radius:50%; }
+    h1 { font-size:clamp(35px,4vw,51px); font-weight:700; letter-spacing:-.04em; line-height:1.45; }
+    h1 em { font-style:normal; color:var(--green); }
+    .lead { max-width:540px; margin-top:23px; font-size:17px; color:var(--muted); line-height:1.9; }
+    .hero-links { display:flex; gap:12px; flex-wrap:wrap; margin-top:29px; }
+    .button { display:inline-flex; align-items:center; justify-content:center; gap:16px; min-height:46px; padding:9px 19px; border:1px solid var(--green); border-radius:8px; color:var(--green); font-size:14px; font-weight:600; }
+    .button.primary { background:var(--green); color:#fff; }
+    .button:hover { background:var(--mint); }
+    .button.primary:hover { background:var(--green-dark); }
+    .hero-note { margin-top:23px; color:var(--muted); font-size:12px; }
+    .hero-preview { background:var(--green-dark); color:#fff; border-radius:var(--radius); padding:28px 28px 25px; box-shadow:0 18px 38px #173e3212; }
+    .preview-top { display:flex; justify-content:space-between; align-items:center; gap:14px; border-bottom:1px solid #ffffff2b; padding-bottom:17px; color:#c3d8cc; font-size:12px; }
+    .example-tag { display:inline-block; padding:1px 9px; border:1px solid currentColor; border-radius:4px; font-size:11px; font-weight:500; letter-spacing:.04em; }
+    .preview-input { margin-top:22px; font-size:18px; line-height:1.8; }
+    .preview-path { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:21px 0; color:#c3d8cc; font-size:12px; }
+    .preview-path .step { padding:3px 10px; background:#ffffff0e; border:1px solid #ffffff30; border-radius:5px; }
+    .preview-result { padding:18px; border-radius:10px; background:#f2f5e9; color:var(--ink); }
+    .preview-result .label { color:var(--green); font-size:11px; letter-spacing:.06em; font-weight:700; }
+    .preview-result strong { display:block; margin:7px 0 3px; font-size:16px; }
+    .preview-result p { font-size:12px; color:var(--muted); }
+    .preview-foot { margin-top:16px; color:#c3d8cc; font-size:11px; }
+    .project-meta { padding:19px 0; display:flex; gap:12px 30px; flex-wrap:wrap; border-top:1px solid var(--line); border-bottom:1px solid var(--line); color:var(--muted); font-size:13px; }
+    .project-meta span { display:inline-flex; gap:10px; }
+    .project-meta b { color:var(--ink); font-weight:500; }
+    section { padding:59px 0; border-bottom:1px solid var(--line); }
+    .section-head { display:flex; align-items:baseline; gap:16px; margin-bottom:28px; }
+    .number { font-family:Consolas,monospace; font-size:12px; color:var(--green); letter-spacing:.07em; flex-shrink:0; }
+    h2 { font-size:27px; letter-spacing:-.025em; font-weight:700; }
+    .section-intro { margin-top:-12px; margin-bottom:26px; color:var(--muted); max-width:840px; font-size:14px; }
+    .problems { display:grid; grid-template-columns:repeat(3,1fr); gap:33px; }
+    .problem { padding-left:18px; border-left:2px solid #aec2ae; }
+    .problem h3 { font-size:17px; margin-bottom:10px; }
+    .problem p { color:var(--muted); font-size:14px; }
+    .diagram-shell { padding:26px 28px 18px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); }
+    .diagram-top { display:flex; justify-content:space-between; gap:15px; color:var(--muted); font-size:12px; margin-bottom:15px; }
+    .diagram-top b { color:var(--green); font-weight:500; }
+    .flow-wide { display:block; width:100%; height:auto; }
+    .flow-small { display:none; width:100%; height:auto; }
+    .diagram-caption { margin-top:14px; font-size:12px; color:var(--muted); }
+    .designs { display:grid; grid-template-columns:repeat(3,1fr); column-gap:33px; row-gap:29px; }
+    .design { padding-top:16px; border-top:1px solid var(--line); }
+    .design-index { font-family:Consolas,monospace; font-size:12px; color:var(--green); }
+    .design h3 { display:inline; margin-left:11px; font-size:16px; }
+    .design p { margin-top:11px; font-size:14px; color:var(--muted); }
+    .demo { border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--white); }
+    .demo-toolbar { padding:16px 22px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; background:var(--soft); border-bottom:1px solid var(--line); }
+    .demo-toolbar .example-tag { color:var(--green); }
+    .demo-buttons { display:flex; flex-wrap:wrap; gap:7px; }
+    .demo-button { padding:7px 13px; min-height:40px; border:1px solid transparent; border-radius:7px; font-size:13px; color:var(--muted); background:transparent; }
+    .demo-button[aria-pressed="true"] { border-color:#c4d2c4; background:var(--white); color:var(--green); font-weight:700; }
+    .demo-button:hover { color:var(--green); background:#ffffff99; }
+    .demo-content { display:grid; grid-template-columns:1fr 1fr 1.04fr; }
+    .demo-column { min-width:0; padding:26px 23px; }
+    .demo-column + .demo-column { border-left:1px solid var(--line); }
+    .demo-column.output { background:#f1f5ed; }
+    .column-label { margin-bottom:17px; display:flex; align-items:center; gap:10px; font-size:12px; color:var(--green); font-weight:700; }
+    .column-label span { display:grid; place-items:center; height:23px; width:23px; border:1px solid #bfd0bd; border-radius:50%; font:11px Consolas,monospace; }
+    .demo-input { font-size:16px; line-height:1.9; }
+    .small-note { font-size:12px; color:var(--muted); }
+    #demo-context { margin-top:17px; }
+    .process-list { margin:0; padding-left:18px; color:var(--muted); font-size:13px; }
+    .process-list li { padding:0 0 8px 3px; }
+    .process-list li:last-child { padding-bottom:0; }
+    #demo-output-title { font-size:16px; margin-bottom:10px; }
+    .output-lines { margin:0; padding:0; list-style:none; font-size:14px; }
+    .output-lines li + li { margin-top:4px; }
+    .output-status { margin-top:16px; display:inline-flex; gap:7px; align-items:center; padding:3px 9px; border-radius:5px; background:#e2eadb; color:var(--green); font-size:12px; }
+    .demo-disclaimer { padding:13px 22px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+    noscript p { padding:12px 22px; color:var(--muted); font-size:12px; }
+    .quality-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+    .quality { background:var(--white); border:1px solid var(--line); border-radius:12px; padding:24px; }
+    .quality-kicker { font-size:11px; color:var(--muted); letter-spacing:.06em; }
+    .quality h3 { font-size:17px; margin:12px 0; }
+    .quality .stat { font-size:28px; font-weight:700; color:var(--green); line-height:1.3; margin:11px 0; letter-spacing:-.04em; }
+    .quality .stat small { font-size:13px; font-weight:400; color:var(--muted); letter-spacing:0; }
+    .quality p { font-size:13px; color:var(--muted); }
+    .quality .mini-note { font-size:11px; margin-top:13px; }
+    details { margin-top:20px; padding:0 3px; font-size:12px; color:var(--muted); }
+    summary { cursor:pointer; padding:8px 0; width:fit-content; color:var(--green); }
+    .evidence-detail { margin-top:5px; padding:17px 20px; border-left:2px solid #c8d4c4; background:var(--soft); }
+    .evidence-detail p + p { margin-top:10px; }
+    .role-grid { display:grid; grid-template-columns:1.25fr 1fr; gap:48px; }
+    .role-lead { font-size:18px; margin-bottom:22px; line-height:1.8; }
+    .role-list { margin:0; padding:0; list-style:none; }
+    .role-list li { display:grid; grid-template-columns:84px 1fr; gap:12px; margin-bottom:13px; font-size:14px; }
+    .role-list strong { font-weight:600; color:var(--green); }
+    .role-list span { color:var(--muted); }
+    .boundary { padding:25px 27px; border-radius:12px; background:var(--amber-bg); align-self:start; }
+    .boundary h3 { font-size:16px; margin-bottom:13px; color:var(--amber); }
+    .boundary p { font-size:13px; color:#655b45; }
+    .boundary p + p { margin-top:12px; }
+    .stack { margin:0; }
+    .stack-row { display:grid; grid-template-columns:180px 1fr; gap:25px; padding:16px 0; border-top:1px solid var(--line); }
+    .stack-row dt { font-size:14px; font-weight:600; }
+    .stack-row dd { margin:0; color:var(--muted); font-size:14px; }
+    .stack-row:first-child { padding-top:0; border-top:0; }
+    .learning-note { margin-top:21px; padding-top:19px; border-top:1px dashed var(--line); color:var(--muted); font-size:12px; }
+    .contact { display:flex; justify-content:space-between; align-items:center; gap:30px; padding:42px 0; }
+    .contact .section-head { margin:0 0 8px; }
+    .contact h2 { font-size:24px; }
+    .contact p { padding-left:34px; color:var(--muted); font-size:13px; }
+    .contact-label { padding:11px 18px; border:1px solid #c2cec0; border-radius:8px; color:var(--green); font-size:14px; white-space:nowrap; }
+    footer { display:flex; justify-content:space-between; gap:15px; padding:21px 0 30px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (min-width:1400px) { .hero { padding-top:85px; padding-bottom:75px; } }
+    @media (max-width:960px) {
+      .wrap { width:calc(100% - 48px); }
+      .brand-sub { display:none; }
+      .hero { gap:30px; grid-template-columns:1.1fr 1fr; padding-top:50px; padding-bottom:45px; }
+      h1 { font-size:37px; }
+      .hero-preview { padding:23px; }
+      .preview-path { gap:5px; }
+      .preview-path .step { padding:3px 7px; }
+      .lead { font-size:15px; }
+      .problems,.designs { gap:25px; }
+      .demo-content { grid-template-columns:1fr 1fr; }
+      .demo-column.output { grid-column:1 / -1; border-left:0; border-top:1px solid var(--line); }
+      .quality-grid { gap:13px; }
+      .quality { padding:20px; }
+      .role-grid { gap:26px; }
+      .flow-wide { display:none; }
+      .flow-small { display:block; max-width:390px; margin-inline:auto; }
+    }
+    @media (max-width:700px) {
+      .wrap { width:calc(100% - 36px); }
+      .topbar { padding:17px 0; gap:12px; }
+      .brand { gap:9px; }
+      .brand-name { font-size:18px; }
+      .brand-mark { width:31px; height:31px; font-size:17px; border-radius:8px; }
+      .nav { gap:17px; font-size:12px; }
+      .nav a:last-child { display:none; }
+      .hero { grid-template-columns:1fr; padding:38px 0 34px; gap:29px; }
+      .eyebrow { margin-bottom:18px; font-size:11px; }
+      h1 { font-size:clamp(33px,7.7vw,45px); }
+      .lead { margin-top:18px; max-width:100%; }
+      .hero-links { margin-top:23px; }
+      .hero-note { margin-top:17px; }
+      .hero-preview { max-width:100%; padding:23px; }
+      .preview-input { font-size:17px; }
+      .preview-path { gap:9px; }
+      .project-meta { gap:7px 22px; font-size:12px; padding:16px 0; }
+      section { padding:37px 0; }
+      h2 { font-size:23px; }
+      .section-head { gap:12px; margin-bottom:23px; }
+      .section-intro { font-size:13px; }
+      .problems { grid-template-columns:1fr; gap:24px; }
+      .problem { padding-left:16px; }
+      .problem h3 { margin-bottom:5px; font-size:16px; }
+      .problem p { font-size:13px; }
+      .diagram-shell { padding:20px 17px 17px; }
+      .diagram-top { font-size:11px; flex-wrap:wrap; gap:2px; }
+      .flow-wide { display:none; }
+      .flow-small { display:block; max-width:390px; margin-inline:auto; }
+      .designs { grid-template-columns:1fr 1fr; gap:23px 20px; }
+      .design h3 { display:block; margin:5px 0 0; font-size:15px; }
+      .design p { font-size:13px; margin-top:8px; }
+      .demo-toolbar { padding:14px 17px; }
+      .demo-buttons { gap:4px; }
+      .demo-button { padding:7px 10px; font-size:12px; min-height:44px; }
+      .demo-content { grid-template-columns:1fr; }
+      .demo-column { padding:22px 20px; }
+      .demo-column + .demo-column { border-left:0; border-top:1px solid var(--line); }
+      .demo-column.output { grid-column:auto; }
+      .column-label { margin-bottom:12px; }
+      .demo-disclaimer { padding:13px 17px; }
+      .quality-grid { grid-template-columns:1fr; gap:14px; }
+      .quality { padding:22px; }
+      .quality h3 { margin:8px 0; }
+      .quality .stat { font-size:27px; margin:8px 0; }
+      .role-grid { grid-template-columns:1fr; gap:23px; }
+      .role-lead { font-size:16px; margin-bottom:19px; }
+      .role-list li { grid-template-columns:72px 1fr; gap:12px; font-size:13px; }
+      .boundary { padding:22px; }
+      .stack-row { grid-template-columns:1fr; gap:5px; padding:14px 0; }
+      .stack-row dt,.stack-row dd { font-size:13px; }
+      .contact { align-items:flex-start; flex-direction:column; gap:18px; padding:33px 0; }
+      .contact p { padding-left:29px; }
+      .contact-label { margin-left:29px; }
+      footer { flex-direction:column; gap:4px; padding-bottom:23px; }
+    }
+    @media (max-width:370px) {
+      .wrap { width:calc(100% - 28px); }
+      .nav { gap:12px; }
+      .nav a:nth-child(3) { display:none; }
+      .hero-preview { padding:19px; }
+      .preview-path { gap:5px; }
+      .designs { column-gap:16px; }
+      .demo-buttons { width:100%; }
+      .demo-button { padding-inline:8px; }
+      .diagram-shell { padding-inline:14px; }
+    }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+    @media print {
+      body { background:#fff; font-size:11pt; }
+      .wrap { width:100%; }
+      .nav,.hero-links,.demo-buttons,.skip { display:none; }
+      .hero { padding:30px 0; }
+      section { padding:25px 0; }
+      .hero-preview,.quality,.boundary,.diagram-shell,.demo { break-inside:avoid; box-shadow:none; }
+      .flow-wide { display:block; }
+      .flow-small { display:none; }
+      .quality-grid { grid-template-columns:repeat(3,1fr); }
+      .contact { padding:25px 0; }
+      a { text-decoration:none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="wrap topbar">
+    <a class="brand" href="#top" aria-label="知希，回到页首">
+      <span class="brand-mark" aria-hidden="true">知</span><span class="brand-name">知希</span><span class="brand-sub">PERSONAL AI ASSISTANT</span>
+    </a>
+    <nav class="nav" aria-label="页面导航">
+      <a href="#architecture">架构</a><a href="#demo">示例</a><a href="#quality">质量保障</a><a href="#contribution">我的贡献</a>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap">
+    <div class="hero" id="top">
+      <div>
+        <div class="eyebrow"><span class="dot" aria-hidden="true"></span>个人项目 · 每天使用，持续迭代</div>
+        <h1>把一句话，<br>变成<em>今天能做的事。</em></h1>
+        <p class="lead">知希是一个个人 AI 助理系统，把触发词、任务规则和本地 Markdown 资料串联起来，生成具体的行动清单与记录。</p>
+        <div class="hero-links"><a class="button primary" href="#demo">查看流程示例 <span aria-hidden="true">↗</span></a><a class="button" href="#contribution">了解我的贡献</a></div>
+        <p class="hero-note">仅本人使用 · AI 协作实现 · 需求设计与结果核验实践</p>
+      </div>
+      <aside class="hero-preview" aria-label="日程流程概览，虚构示例">
+        <div class="preview-top"><span>一句话 → 可检查的输出</span><span class="example-tag">虚构示例</span></div>
+        <p class="preview-input">“记日程：这周五整理书架，<br>预留 30 分钟。”</p>
+        <div class="preview-path" aria-label="匹配日程路由、执行任务规则、处理日期">
+          <span class="step">匹配路由</span><span aria-hidden="true">→</span><span class="step">日程 skill</span><span aria-hidden="true">→</span><span class="step">日期处理</span>
+        </div>
+        <div class="preview-result"><span class="label">DRY-RUN · 变更预览</span><strong>周五 · 整理书架 · 30 分钟</strong><p>先检查拟新增内容，再决定是否写入。</p></div>
+        <p class="preview-foot">固定的虚构内容，仅用于说明系统的工作方式。</p>
+      </aside>
+    </div>
+    <div class="project-meta" aria-label="项目基本信息">
+      <span>项目类型 <b>个人 AI 应用实践</b></span><span>运行方式 <b>AI 工具 + 本地文件与脚本</b></span><span>许可 <b>MIT</b></span>
+    </div>
+
+    <section id="problem" aria-labelledby="problem-title">
+      <div class="section-head"><span class="number">02</span><h2 id="problem-title">它解决什么问题</h2></div>
+      <div class="problems">
+        <article class="problem"><h3>每次都要重讲规则</h3><p>把反复使用的处理步骤与输出要求写成 skill，也就是一类任务的执行说明，供 AI 按需读取。</p></article>
+        <article class="problem"><h3>记录散落，难以接着做</h3><p>用本地 Markdown 文本保留任务事实，让简报、记录与看板围绕同一份资料生成。</p></article>
+        <article class="problem"><h3>建议太泛，结果难核对</h3><p>把输出落到具体事项；日期、数字和表格交给 Python 脚本按规则处理，并保留检查环节。</p></article>
+      </div>
+    </section>
+
+    <section id="architecture" aria-labelledby="architecture-title">
+      <div class="section-head"><span class="number">03</span><h2 id="architecture-title">从输入到输出，职责分开</h2></div>
+      <p class="section-intro">路由负责找到任务入口；skill 提供处理规则；本地资料提供事实；AI 结合这些内容判断和表达。</p>
+      <figure class="diagram-shell" style="margin:0">
+        <div class="diagram-top"><b>系统架构 · 流程示意</b><span>按需读取资料、调用脚本</span></div>
+        <svg class="flow-wide" viewBox="0 0 1000 282" role="img" aria-labelledby="flow-title flow-desc">
+          <title id="flow-title">知希的主要处理流程</title>
+          <desc id="flow-desc">触发词经过显式路由，选择 skill 任务规则，读取本地 Markdown 资料，形成当日输出。Python 脚本按需处理日期、数字与表格。</desc>
+          <defs><marker id="arrow-wide" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#6c8676" stroke-width="1.4"/></marker></defs>
+          <g fill="none" stroke="#8da18f" stroke-width="1.5" marker-end="url(#arrow-wide)"><path d="M168 83H204"/><path d="M370 83H406"/><path d="M572 83H608"/><path d="M774 83H810"/></g>
+          <g font-family="Microsoft YaHei, PingFang SC, sans-serif" text-anchor="middle">
+            <rect x="4" y="35" width="164" height="96" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="86" y="75" fill="#202f2b" font-size="18" font-weight="600">触发词</text><text x="86" y="105" fill="#586862" font-size="13">一句话提出需求</text>
+            <rect x="206" y="35" width="164" height="96" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="288" y="75" fill="#202f2b" font-size="18" font-weight="600">路由</text><text x="288" y="105" fill="#586862" font-size="13">匹配显式别名</text>
+            <rect x="408" y="35" width="164" height="96" rx="10" fill="#e9f0e8" stroke="#b5c8b3"/><text x="490" y="75" fill="#225846" font-size="18" font-weight="600">skill</text><text x="490" y="105" fill="#586862" font-size="13">任务步骤与输出规则</text>
+            <rect x="610" y="35" width="164" height="96" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="692" y="75" fill="#202f2b" font-size="18" font-weight="600">本地 Markdown</text><text x="692" y="105" fill="#586862" font-size="13">可编辑、可核对的事实</text>
+            <rect x="812" y="35" width="184" height="96" rx="10" fill="#225846"/><text x="904" y="75" fill="#fff" font-size="18" font-weight="600">当日输出</text><text x="904" y="105" fill="#d4e4d8" font-size="13">行动清单 / 记录 / 简报</text>
+            <rect x="521" y="195" width="342" height="67" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="692" y="221" fill="#225846" font-size="16" font-weight="600">Python 确定性脚本</text><text x="692" y="244" fill="#586862" font-size="13">按规则处理日期、数字与表格</text>
+          </g>
+          <g fill="none" stroke="#8da18f" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow-wide)"><path d="M692 131V188"/><path d="M863 229H904V138"/></g>
+        </svg>
+        <svg class="flow-small" viewBox="0 0 330 644" role="img" aria-labelledby="flow-mobile-title flow-mobile-desc">
+          <title id="flow-mobile-title">知希处理流程，纵向示意</title>
+          <desc id="flow-mobile-desc">触发词、路由、skill、本地 Markdown 资料、当日输出依次连接；Python 脚本作为按需调用的日期、数字和表格处理工具。</desc>
+          <defs><marker id="arrow-small" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7" fill="none" stroke="#6c8676" stroke-width="1.4"/></marker></defs>
+          <g fill="none" stroke="#8da18f" stroke-width="1.5" marker-end="url(#arrow-small)"><path d="M165 82V104"/><path d="M165 188V210"/><path d="M165 294V316"/><path d="M165 400V422"/></g>
+          <g font-family="Microsoft YaHei, PingFang SC, sans-serif" text-anchor="middle">
+            <rect x="31" y="4" width="268" height="78" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="165" y="37" fill="#202f2b" font-size="18" font-weight="600">触发词</text><text x="165" y="62" fill="#586862" font-size="14">一句话提出需求</text>
+            <rect x="31" y="110" width="268" height="78" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="165" y="143" fill="#202f2b" font-size="18" font-weight="600">路由</text><text x="165" y="168" fill="#586862" font-size="14">匹配显式别名</text>
+            <rect x="31" y="216" width="268" height="78" rx="10" fill="#e9f0e8" stroke="#b5c8b3"/><text x="165" y="249" fill="#225846" font-size="18" font-weight="600">skill</text><text x="165" y="274" fill="#586862" font-size="14">任务步骤与输出规则</text>
+            <rect x="31" y="322" width="268" height="78" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="165" y="355" fill="#202f2b" font-size="18" font-weight="600">本地 Markdown 资料</text><text x="165" y="380" fill="#586862" font-size="14">可编辑、可核对的事实</text>
+            <rect x="31" y="428" width="268" height="78" rx="10" fill="#225846"/><text x="165" y="461" fill="#fff" font-size="18" font-weight="600">当日输出</text><text x="165" y="486" fill="#d4e4d8" font-size="14">行动清单 / 记录 / 简报</text>
+            <rect x="31" y="554" width="268" height="78" rx="10" fill="#f6f7f3" stroke="#d9e1d9"/><text x="165" y="587" fill="#225846" font-size="17" font-weight="600">Python 确定性脚本</text><text x="165" y="612" fill="#586862" font-size="14">按规则处理日期、数字与表格</text>
+          </g>
+          <path d="M299 593H318V465H305" fill="none" stroke="#8da18f" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow-small)"/>
+          <text x="165" y="537" fill="#586862" font-size="13" text-anchor="middle" font-family="Microsoft YaHei, sans-serif">↑ 按任务需要参与处理</text>
+        </svg>
+        <figcaption class="diagram-caption">Markdown 是本地文本资料；看板是由资料生成的视图。上图说明职责与主流程，不表示每次任务都会调用全部组件。</figcaption>
+      </figure>
+    </section>
+
+    <section id="design" aria-labelledby="design-title">
+      <div class="section-head"><span class="number">04</span><h2 id="design-title">六个核心设计点</h2></div>
+      <div class="designs">
+        <article class="design"><span class="design-index">01</span><h3>规则拆成 skill</h3><p>每类任务保存自己的步骤与输出要求，修改时能明确定位到对应规则。</p></article>
+        <article class="design"><span class="design-index">02</span><h3>显式路由，有歧义就澄清</h3><p>用声明的触发词找到入口；同一片段命中多个任务时，交给上层澄清。</p></article>
+        <article class="design"><span class="design-index">03</span><h3>本地资料作为事实依据</h3><p>事实保留在可编辑的 Markdown 中，输出与看板按需读取这些资料。</p></article>
+        <article class="design"><span class="design-index">04</span><h3>计算交给脚本</h3><p>让 Python 按规则处理日期、数字和表格，AI 负责结合上下文判断和表达。</p></article>
+        <article class="design"><span class="design-index">05</span><h3>先预览，再写入</h3><p>结构化操作默认 dry-run，即预览拟变更；显式指定 <code>--apply</code> 才执行写入。</p></article>
+        <article class="design"><span class="design-index">06</span><h3>输出之后还有校验</h3><p>用路由用例、完整性检查与发布校验发现问题，让迭代有可核对的依据。</p></article>
+      </div>
+    </section>
+
+    <section id="demo" aria-labelledby="demo-title">
+      <div class="section-head"><span class="number">05</span><h2 id="demo-title">看一次完整的任务流转</h2></div>
+      <p class="section-intro">以下内容均为自拟的虚构示例。切换场景，查看输入如何经过规则处理，形成可检查的结果。</p>
+      <div class="demo">
+        <div class="demo-toolbar">
+          <span class="example-tag">虚构示例 · 预设流程</span>
+          <div class="demo-buttons" role="group" aria-label="选择虚构示例">
+            <button class="demo-button" type="button" aria-pressed="true" data-demo="calendar">日程安排</button>
+            <button class="demo-button" type="button" aria-pressed="false" data-demo="briefing">当日简报</button>
+            <button class="demo-button" type="button" aria-pressed="false" data-demo="clarify">信息不足</button>
+          </div>
+        </div>
+        <div id="demo-content" class="demo-content" aria-live="polite" aria-atomic="true">
+          <div class="demo-column">
+            <div class="column-label"><span>1</span>输入</div>
+            <p class="demo-input" id="demo-input">“记日程：这周五整理书架，预留 30 分钟。”</p>
+            <p class="small-note" id="demo-context">虚构基准日：2026-11-02（周一）；示例日历中该日暂无安排。</p>
+          </div>
+          <div class="demo-column">
+            <div class="column-label"><span>2</span>处理</div>
+            <ol class="process-list" id="demo-process"><li>匹配“记日程”，进入日程路由。</li><li>读取日程 skill 和虚构日历。</li><li>按日期规则，将“这周五”解析为 2026-11-06。</li><li>生成拟新增内容，保留写入确认。</li></ol>
+          </div>
+          <div class="demo-column output">
+            <div class="column-label"><span>3</span>输出</div>
+            <h3 id="demo-output-title">拟新增一条日程</h3>
+            <ul class="output-lines" id="demo-output"><li>日期：2026-11-06（周五）</li><li>事项：整理书架</li><li>时长：30 分钟</li><li>开始时间：待补充</li></ul>
+            <div class="output-status" id="demo-status">dry-run · 预览，尚未写入</div>
+          </div>
+        </div>
+        <noscript><p>当前显示“日程安排”示例。启用 JavaScript 后可切换另外两个示例。</p></noscript>
+        <div class="demo-disclaimer">演示只切换本页预设内容，不连接模型或读取本机资料，也不执行写入。实际系统由 AI 工具与本地规则、文件及脚本协作运行。</div>
+      </div>
+    </section>
+
+    <section id="quality" aria-labelledby="quality-title">
+      <div class="section-head"><span class="number">06</span><h2 id="quality-title">怎样让结果更容易核验</h2></div>
+      <div class="quality-grid">
+        <article class="quality"><div class="quality-kicker">路由回归 · 最近一次校验</div><div class="stat">11 <small>条路由</small> / 27 <small>条用例</small></div><h3>2026-10-27 校验通过</h3><p>回归测试检查预设输入是否进入预期任务，帮助发现规则修改引入的问题。</p><p class="mini-note">2026-10-27 运行 <code>route.py validate</code>，结果 FAIL 0、WARN 0；路由测试 7 项通过。仅覆盖路由部分，不代表整个项目。</p></article>
+        <article class="quality"><div class="quality-kicker">写入控制 · 设计机制</div><h3>dry-run 默认预览</h3><p>先呈现拟变更，再通过显式参数执行写入，让记录更新有检查机会。</p><p class="mini-note">依据结构化操作脚本的头部说明。各具体命令仍需按自身契约使用。</p></article>
+        <article class="quality"><div class="quality-kicker">交付与发布 · 设计机制</div><h3>用检查结果作为放行条件</h3><p>脚本提供完整性与发布检查；发布校验会核对已测源码，并拦截失败、跳过或源码变化后的记录。</p><p class="mini-note">本页说明机制；本次未运行原项目校验，也未复核完整发布日志。</p></article>
+      </div>
+      <details>
+        <summary>查看资料依据与验证范围</summary>
+        <div class="evidence-detail">
+          <p><strong>数字说明：</strong>上方 11 条路由 / 27 条用例是 2026-10-27 的最新校验结果，与 <code>routing.json</code>、<code>route_cases.json</code> 当前配置一致。此前 2026-09-25 的验收记录为 12 条路由 / 23 条用例，项目其后经过调整，数量已不同，故以最新为准。</p>
+          <p><strong>设计依据：</strong><code>README.md</code>、<code>LICENSE</code>、路由配置的结构、<code>.agents/skills/</code> 中的名称与开头说明，以及 <code>route.py</code>、<code>life_ops.py</code>、<code>project_audit.py</code>、<code>verify_delivery.py</code>、<code>assistant_regression.py</code>、<code>refresh_dashboards.py</code> 等脚本的头部注释。</p>
+          <p><strong>范围：</strong>未读取个人资料正文、看板内容或真实对话。README 与脚本说明显示项目包含本地看板、定时任务及发布校验机制；本次未核验它们的运行状态。</p>
+        </div>
+      </details>
+    </section>
+
+    <section id="contribution" aria-labelledby="contribution-title">
+      <div class="section-head"><span class="number">07</span><h2 id="contribution-title">我在其中做了什么</h2></div>
+      <div class="role-grid">
+        <div>
+          <p class="role-lead">我负责提出需求、检查结果并反馈迭代，代码主要由 AI 协作完成。</p>
+          <ul class="role-list">
+            <li><strong>定义需求</strong><span>从自己的日常使用中确定场景，说明要得到什么输出、哪些信息必须保留。</span></li>
+            <li><strong>明确规则</strong><span>提出任务流程、事实依据与写入边界，把模糊需求逐步变成可执行要求。</span></li>
+            <li><strong>核验结果</strong><span>检查输出是否符合事实和预期，发现错误后给出具体反馈，推动修正。</span></li>
+            <li><strong>持续迭代</strong><span>每天使用，并把实际遇到的问题带回需求与验证环节。</span></li>
+          </ul>
+        </div>
+        <aside class="boundary" aria-labelledby="boundary-title">
+          <h3 id="boundary-title">当前能力与项目边界</h3>
+          <p>这是仅本人使用的个人系统，尚无多人使用场景的验证。</p>
+          <p>代码主要借助 Claude、Codex、Cursor 等工具协作实现；我的 Python 处于入门水平，对复杂实现仍需借助 AI 并检查结果。</p>
+          <p>AI 输出仍可能出错。系统依赖资料质量、任务规则与人工核验，测试覆盖也有边界。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="stack" aria-labelledby="stack-title">
+      <div class="section-head"><span class="number">08</span><h2 id="stack-title">技术栈与工具，各自承担什么</h2></div>
+      <dl class="stack">
+        <div class="stack-row"><dt>Markdown / SKILL.md</dt><dd>保存本地事实资料，以及按任务拆分的步骤、约束和输出要求。</dd></div>
+        <div class="stack-row"><dt>JSON 路由与用例</dt><dd>声明触发词到任务的映射，并保存可用于回归检查的输入与预期。</dd></div>
+        <div class="stack-row"><dt>Python 脚本</dt><dd>承担日期、数字、表格等规则处理，以及完整性检查与发布校验。</dd></div>
+        <div class="stack-row"><dt>本地看板 / 定时任务</dt><dd>提供资料的派生视图和周期任务入口；任务声明与实际运行状态分别检查。</dd></div>
+        <div class="stack-row"><dt>Claude / Codex / Cursor</dt><dd>用于 AI 辅助编写、修改和排查；由我提出要求、检查结果、反馈迭代。</dd></div>
+      </dl>
+      <p class="learning-note">配套探索：AI 辅助学习系统 learning-os，用于课程计划、练习、错题与复测，并区分“做过”“有提示”和“独立掌握”。此处仅作简要介绍。</p>
+    </section>
+
+    <div class="contact" id="contact">
+      <div><div class="section-head"><span class="number">09</span><h2>欢迎交流这个项目</h2></div><p>可进一步说明需求如何拆分、结果如何检查，以及错误如何反馈到下一轮迭代。</p></div>
+      <span class="contact-label">联系方式见简历</span>
+    </div>
+  </main>
+  <footer class="wrap"><span>知希 · 个人 AI 助理系统 · 作品展示 v1</span><span>MIT 许可 · 资料核对日期 2026-10-27 · 页面示例均为虚构</span></footer>
+
+  <script>
+    (() => {
+      'use strict';
+      const examples = {
+        calendar: {
+          input: '“记日程：这周五整理书架，预留 30 分钟。”',
+          context: '虚构基准日：2026-11-02（周一）；示例日历中该日暂无安排。',
+          process: ['匹配“记日程”，进入日程路由。', '读取日程 skill 和虚构日历。', '按日期规则，将“这周五”解析为 2026-11-06。', '生成拟新增内容，保留写入确认。'],
+          title: '拟新增一条日程',
+          output: ['日期：2026-11-06（周五）', '事项：整理书架', '时长：30 分钟', '开始时间：待补充'],
+          status: 'dry-run · 预览，尚未写入'
+        },
+        briefing: {
+          input: '“今天要怎么做？给我一份简短清单。”',
+          context: '虚构资料：今天有“领取预约图书”；“整理桌面”仍未完成。',
+          process: ['匹配“今天要怎么做”，进入简报路由。', '读取简报 skill 和虚构任务资料。', '整理当天事项与待办，保留已知条件。', '按行动清单格式生成简报。'],
+          title: '今天的行动清单',
+          output: ['□ 领取预约图书', '□ 整理桌面', '时间安排：依据个人空闲时段决定', '待确认：图书领取截止时间'],
+          status: '生成清单 · 缺失信息待确认'
+        },
+        clarify: {
+          input: '“记日程：下周找一天整理书架。”',
+          context: '虚构资料：只给出了周范围，缺少具体日期与时间。',
+          process: ['匹配“记日程”，进入日程路由。', '读取日程 skill，检查必要信息。', '识别“下周找一天”未指定日期。', '保留未知项，向用户补问。'],
+          title: '先补充关键信息',
+          output: ['事项：整理书架', '日期：待确认', '时间：待确认', '需要补充：下周哪一天安排？'],
+          status: '等待澄清 · 尚未写入'
+        }
+      };
+      const byId = (id) => document.getElementById(id);
+      const renderList = (id, items) => {
+        byId(id).replaceChildren(...items.map((text) => {
+          const item = document.createElement('li');
+          item.textContent = text;
+          return item;
+        }));
+      };
+      document.querySelectorAll('[data-demo]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const example = examples[button.dataset.demo];
+          if (!example) return;
+          document.querySelectorAll('[data-demo]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+          byId('demo-input').textContent = example.input;
+          byId('demo-context').textContent = example.context;
+          renderList('demo-process', example.process);
+          byId('demo-output-title').textContent = example.title;
+          renderList('demo-output', example.output);
+          byId('demo-status').textContent = example.status;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
